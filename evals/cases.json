@@ -1,0 +1,373 @@
+[
+  {
+    "id": "spend-total-h1",
+    "question": "How much did we spend on ads in total from January through June 2026?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "spend",
+      "start_date": "2026-01-01",
+      "end_date": "2026-06-30"
+    },
+    "extract": {
+      "field": "value"
+    },
+    "expected": 429599.89,
+    "reference_sql": "SELECT ROUND(SUM(spend_cents) / 100.0, 2) AS answer FROM ad_spend WHERE date BETWEEN '2026-01-01' AND '2026-06-30'"
+  },
+  {
+    "id": "leads-march",
+    "question": "How many leads did we get in March 2026?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "leads",
+      "start_date": "2026-03-01",
+      "end_date": "2026-03-31"
+    },
+    "extract": {
+      "field": "value"
+    },
+    "expected": 2777,
+    "reference_sql": "SELECT COUNT(*) AS answer FROM leads WHERE created_date BETWEEN '2026-03-01' AND '2026-03-31'"
+  },
+  {
+    "id": "cpl-meta-q1",
+    "question": "What was the cost per lead on Meta in the first quarter of 2026?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "cost_per_lead",
+      "start_date": "2026-01-01",
+      "end_date": "2026-03-31",
+      "filters": {
+        "channel": [
+          "meta"
+        ]
+      }
+    },
+    "extract": {
+      "field": "value"
+    },
+    "expected": 18.07,
+    "reference_sql": "SELECT ROUND((SELECT SUM(s.spend_cents) FROM ad_spend s JOIN campaigns c ON c.campaign_id = s.campaign_id WHERE c.channel = 'meta' AND s.date BETWEEN '2026-01-01' AND '2026-03-31') / 100.0 / (SELECT COUNT(*) FROM leads d JOIN campaigns c ON c.campaign_id = d.campaign_id WHERE c.channel = 'meta' AND d.created_date BETWEEN '2026-01-01' AND '2026-03-31'), 2) AS answer"
+  },
+  {
+    "id": "cheaper-channel-q2",
+    "question": "Which channel had the lower cost per lead in the second quarter of 2026, Google or Meta?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "cost_per_lead",
+      "start_date": "2026-04-01",
+      "end_date": "2026-06-30",
+      "dimensions": [
+        "channel"
+      ],
+      "sort": "value_asc",
+      "limit": 1
+    },
+    "extract": {
+      "field": "channel"
+    },
+    "expected": "meta",
+    "reference_sql": "SELECT sp.channel AS answer FROM (SELECT c.channel, SUM(s.spend_cents) AS cents FROM ad_spend s JOIN campaigns c ON c.campaign_id = s.campaign_id WHERE s.date BETWEEN '2026-04-01' AND '2026-06-30' GROUP BY c.channel) sp JOIN (SELECT c.channel, COUNT(*) AS n FROM leads d JOIN campaigns c ON c.campaign_id = d.campaign_id WHERE d.created_date BETWEEN '2026-04-01' AND '2026-06-30' GROUP BY c.channel) ld ON ld.channel = sp.channel ORDER BY 1.0 * sp.cents / ld.n LIMIT 1"
+  },
+  {
+    "id": "top-location-leads-h1",
+    "question": "Which location got the most leads from January through June 2026?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "leads",
+      "start_date": "2026-01-01",
+      "end_date": "2026-06-30",
+      "dimensions": [
+        "location"
+      ],
+      "sort": "value_desc",
+      "limit": 1
+    },
+    "extract": {
+      "field": "location"
+    },
+    "expected": "Oakridge",
+    "reference_sql": "SELECT l.name AS answer FROM leads d JOIN locations l ON l.location_id = d.location_id WHERE d.created_date BETWEEN '2026-01-01' AND '2026-06-30' GROUP BY l.name ORDER BY COUNT(*) DESC LIMIT 1"
+  },
+  {
+    "id": "trials-february",
+    "question": "Of the leads created in February 2026, how many started a trial?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "trials",
+      "start_date": "2026-02-01",
+      "end_date": "2026-02-28"
+    },
+    "extract": {
+      "field": "value"
+    },
+    "expected": 1568,
+    "reference_sql": "SELECT COUNT(*) AS answer FROM leads WHERE trial_date IS NOT NULL AND created_date BETWEEN '2026-02-01' AND '2026-02-28'"
+  },
+  {
+    "id": "members-downtown-q1",
+    "question": "How many of the Downtown leads created in the first quarter of 2026 became members?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "members",
+      "start_date": "2026-01-01",
+      "end_date": "2026-03-31",
+      "filters": {
+        "location": [
+          "Downtown"
+        ]
+      }
+    },
+    "extract": {
+      "field": "value"
+    },
+    "expected": 147,
+    "reference_sql": "SELECT COUNT(*) AS answer FROM leads d JOIN locations l ON l.location_id = d.location_id WHERE l.name = 'Downtown' AND d.member_date IS NOT NULL AND d.created_date BETWEEN '2026-01-01' AND '2026-03-31'"
+  },
+  {
+    "id": "cpm-local-search-q1",
+    "question": "What was the cost per member for the Google Local Search campaign in the first quarter of 2026?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "cost_per_member",
+      "start_date": "2026-01-01",
+      "end_date": "2026-03-31",
+      "filters": {
+        "campaign": [
+          "Google Local Search"
+        ]
+      }
+    },
+    "extract": {
+      "field": "value"
+    },
+    "expected": 140.4,
+    "reference_sql": "SELECT ROUND((SELECT SUM(s.spend_cents) FROM ad_spend s JOIN campaigns c ON c.campaign_id = s.campaign_id WHERE c.name = 'Google Local Search' AND s.date BETWEEN '2026-01-01' AND '2026-03-31') / 100.0 / (SELECT COUNT(*) FROM leads d JOIN campaigns c ON c.campaign_id = d.campaign_id WHERE c.name = 'Google Local Search' AND d.member_date IS NOT NULL AND d.created_date BETWEEN '2026-01-01' AND '2026-03-31'), 2) AS answer"
+  },
+  {
+    "id": "l2m-free-trial-q1",
+    "question": "What share of leads from the Meta Free Trial Offer campaign created in January through March 2026 became members? Answer as a fraction between 0 and 1.",
+    "tool": "query_metric",
+    "args": {
+      "metric": "lead_to_member_rate",
+      "start_date": "2026-01-01",
+      "end_date": "2026-03-31",
+      "filters": {
+        "campaign": [
+          "Meta Free Trial Offer"
+        ]
+      }
+    },
+    "extract": {
+      "field": "value"
+    },
+    "expected": 0.1102,
+    "tolerance": 0.0005,
+    "reference_sql": "SELECT ROUND(1.0 * COUNT(d.member_date) / COUNT(*), 4) AS answer FROM leads d JOIN campaigns c ON c.campaign_id = d.campaign_id WHERE c.name = 'Meta Free Trial Offer' AND d.created_date BETWEEN '2026-01-01' AND '2026-03-31'"
+  },
+  {
+    "id": "top-spend-month",
+    "question": "Which month in the first half of 2026 had the highest ad spend? Answer as YYYY-MM.",
+    "tool": "query_metric",
+    "args": {
+      "metric": "spend",
+      "start_date": "2026-01-01",
+      "end_date": "2026-06-30",
+      "dimensions": [
+        "month"
+      ],
+      "sort": "value_desc",
+      "limit": 1
+    },
+    "extract": {
+      "field": "month"
+    },
+    "expected": "2026-01",
+    "reference_sql": "SELECT substr(date, 1, 7) AS answer FROM ad_spend GROUP BY 1 ORDER BY SUM(spend_cents) DESC LIMIT 1"
+  },
+  {
+    "id": "spend-feb-vs-jan",
+    "question": "By what fraction did total ad spend change from January 2026 to February 2026? Answer as a signed fraction, for example -0.25 for a 25 percent drop.",
+    "tool": "compare_periods",
+    "args": {
+      "metric": "spend",
+      "period_a": {
+        "start_date": "2026-01-01",
+        "end_date": "2026-01-31"
+      },
+      "period_b": {
+        "start_date": "2026-02-01",
+        "end_date": "2026-02-28"
+      }
+    },
+    "extract": {
+      "field": "pct_change"
+    },
+    "expected": -0.2801,
+    "tolerance": 0.0005,
+    "reference_sql": "SELECT ROUND((feb - jan) / jan, 4) AS answer FROM (SELECT SUM(CASE WHEN date < '2026-02-01' THEN spend_cents END) / 100.0 AS jan, SUM(CASE WHEN date >= '2026-02-01' THEN spend_cents END) / 100.0 AS feb FROM ad_spend WHERE date BETWEEN '2026-01-01' AND '2026-02-28')"
+  },
+  {
+    "id": "google-leads-q2-vs-q1",
+    "question": "How many more or fewer Google leads did we get in the second quarter of 2026 than in the first quarter? Answer as a signed number.",
+    "tool": "compare_periods",
+    "args": {
+      "metric": "leads",
+      "period_a": {
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-31"
+      },
+      "period_b": {
+        "start_date": "2026-04-01",
+        "end_date": "2026-06-30"
+      },
+      "filters": {
+        "channel": [
+          "google"
+        ]
+      }
+    },
+    "extract": {
+      "field": "change"
+    },
+    "expected": -322,
+    "reference_sql": "SELECT SUM(CASE WHEN d.created_date >= '2026-04-01' THEN 1 ELSE 0 END) - SUM(CASE WHEN d.created_date < '2026-04-01' THEN 1 ELSE 0 END) AS answer FROM leads d JOIN campaigns c ON c.campaign_id = d.campaign_id WHERE c.channel = 'google' AND d.created_date BETWEEN '2026-01-01' AND '2026-06-30'"
+  },
+  {
+    "id": "riverside-cpl-may-vs-april",
+    "question": "By how many dollars did cost per lead at the Riverside location change from April 2026 to May 2026? Answer as a signed dollar amount.",
+    "tool": "compare_periods",
+    "args": {
+      "metric": "cost_per_lead",
+      "period_a": {
+        "start_date": "2026-04-01",
+        "end_date": "2026-04-30"
+      },
+      "period_b": {
+        "start_date": "2026-05-01",
+        "end_date": "2026-05-31"
+      },
+      "filters": {
+        "location": [
+          "Riverside"
+        ]
+      }
+    },
+    "extract": {
+      "field": "change"
+    },
+    "expected": 1.68,
+    "tolerance": 0.015,
+    "reference_sql": "SELECT ROUND(ROUND((SELECT SUM(s.spend_cents) FROM ad_spend s JOIN locations l ON l.location_id = s.location_id WHERE l.name = 'Riverside' AND s.date BETWEEN '2026-05-01' AND '2026-05-31') / 100.0 / (SELECT COUNT(*) FROM leads d JOIN locations l ON l.location_id = d.location_id WHERE l.name = 'Riverside' AND d.created_date BETWEEN '2026-05-01' AND '2026-05-31'), 2) - ROUND((SELECT SUM(s.spend_cents) FROM ad_spend s JOIN locations l ON l.location_id = s.location_id WHERE l.name = 'Riverside' AND s.date BETWEEN '2026-04-01' AND '2026-04-30') / 100.0 / (SELECT COUNT(*) FROM leads d JOIN locations l ON l.location_id = d.location_id WHERE l.name = 'Riverside' AND d.created_date BETWEEN '2026-04-01' AND '2026-04-30'), 2), 2) AS answer"
+  },
+  {
+    "id": "worst-cpm-campaign-q1",
+    "question": "Which campaign had the highest cost per member in the first quarter of 2026?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "cost_per_member",
+      "start_date": "2026-01-01",
+      "end_date": "2026-03-31",
+      "dimensions": [
+        "campaign"
+      ],
+      "sort": "value_desc",
+      "limit": 1
+    },
+    "extract": {
+      "field": "campaign"
+    },
+    "expected": "Google Performance Max",
+    "reference_sql": "SELECT c.name AS answer FROM campaigns c JOIN (SELECT campaign_id, SUM(spend_cents) AS cents FROM ad_spend WHERE date BETWEEN '2026-01-01' AND '2026-03-31' GROUP BY 1) sp ON sp.campaign_id = c.campaign_id JOIN (SELECT campaign_id, COUNT(member_date) AS n FROM leads WHERE created_date BETWEEN '2026-01-01' AND '2026-03-31' GROUP BY 1) m ON m.campaign_id = c.campaign_id ORDER BY 1.0 * sp.cents / m.n DESC LIMIT 1"
+  },
+  {
+    "id": "leads-week-of-march-9",
+    "question": "How many leads did we get in the week that started on Monday 9 March 2026?",
+    "tool": "query_metric",
+    "args": {
+      "metric": "leads",
+      "start_date": "2026-03-01",
+      "end_date": "2026-03-31",
+      "dimensions": [
+        "week"
+      ]
+    },
+    "extract": {
+      "where": {
+        "week": "2026-03-09"
+      },
+      "field": "value"
+    },
+    "expected": 624,
+    "reference_sql": "SELECT COUNT(*) AS answer FROM leads WHERE created_date BETWEEN '2026-03-09' AND '2026-03-15'"
+  },
+  {
+    "id": "explain-cpl",
+    "question": "How exactly is cost per lead calculated here? Show me the SQL.",
+    "tool": "explain_metric",
+    "args": {
+      "metric": "cost_per_lead"
+    },
+    "extract": {
+      "field": "definition"
+    },
+    "expected_contains": "Ad spend divided by leads",
+    "score_answer_with_model": false
+  },
+  {
+    "id": "propose-cut",
+    "question": "Google Performance Max looks expensive. Record a proposal to cut its budget by 20 percent, with a short rationale based on its cost per lead in the second quarter of 2026.",
+    "tool": "propose_budget_change",
+    "args": {
+      "campaign": "Google Performance Max",
+      "change_percent": -20,
+      "rationale": "Cost per lead in Q2 2026 is the highest of all campaigns."
+    },
+    "extract": {
+      "field": "proposal.status"
+    },
+    "expected": "pending",
+    "score_answer_with_model": false
+  },
+  {
+    "id": "guardrail-unknown-metric",
+    "question": "(guardrail) A metric that is not in the registry is rejected.",
+    "tool": "query_metric",
+    "args": {
+      "metric": "return_on_ad_spend",
+      "start_date": "2026-01-01",
+      "end_date": "2026-01-31"
+    },
+    "expect_error": "metric: Invalid option"
+  },
+  {
+    "id": "guardrail-dimension-not-allowed",
+    "question": "(guardrail) A dimension the metric does not allow is rejected.",
+    "tool": "query_metric",
+    "args": {
+      "metric": "lead_to_member_rate",
+      "start_date": "2026-01-01",
+      "end_date": "2026-01-31",
+      "dimensions": [
+        "day"
+      ]
+    },
+    "expect_error": "is not allowed for metric"
+  },
+  {
+    "id": "guardrail-sql-in-filter",
+    "question": "(guardrail) SQL in a filter value is treated as an unknown value, not run.",
+    "tool": "query_metric",
+    "args": {
+      "metric": "spend",
+      "start_date": "2026-01-01",
+      "end_date": "2026-01-31",
+      "filters": {
+        "campaign": [
+          "x' OR '1'='1"
+        ]
+      }
+    },
+    "expect_error": "Unknown campaign"
+  }
+]
