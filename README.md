@@ -2,6 +2,8 @@
 
 An example MCP server that lets an AI assistant answer marketing performance questions from a small warehouse. The assistant does not write SQL. It picks from a fixed list of metrics, and the server builds the query.
 
+Related case study on [mertatalay.com](https://mertatalay.com): [AI agents that ask before they write](https://mertatalay.com/work/ai-agents-with-approval/).
+
 **Read this first**
 
 - The data is synthetic. A seeded script generates every row.
